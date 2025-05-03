@@ -28,9 +28,9 @@ Detailed instruction is provided for each one below.
 ### Interpolation vs extrapolation
 
 
-### :chart_with_upwards_trend: Comparison with LASSO regression
+### :chart_with_upwards_trend: :chart_with_downwards_trend: Comparison with LASSO regression
 
-### Robustness-efficiency trade-offs in classification
+### :shield: :muscle: :gear: Robustness-efficiency trade-offs in classification
 All code for this experiment is located in the `label_noise` directory.
 First, navigate to the project directory:
 ```
