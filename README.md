@@ -24,6 +24,15 @@ Detailed instruction is provided for each one below.
 
 
 ### CATE estimation
+All code for this experiment is located in the `CATE` directory.
+First, navigate to the project directory:
+```
+cd CATE
+```
+The directory contains 5 scripts with main script `CATE_comparison.py`. Running this script will help you reproduce the results in Figure 3 and Table 4.
+The `run-demo.sh` shows you an example of how to run the script in bash.
+The rest of the files are helpers.
+The `cate.py` defines all CATE estimators, `data_gen.py` can generate the dataset, `utils.py` are utility functions used.
 
 
 ## TabPFN inductive bias: 
@@ -53,13 +62,6 @@ The directory contains three files:
 - The `run-demo.sh` shows you an example how to run the experiment in bash script. The example in this base is when training set is of size $n=50$ and $100$ features with sparsity $s=1$ under random seed $1$.
 - The `ALE_plot.ipynb` provides the code to reproduce Figure 10 in the paper.
 
-Execute either script with default parameters (all noise levels + 1000 repetitions): e.g.,
-```
-python knn.py
-```
-What the scripts do automatically: 1) Iterate through all configured noise levels 2)Run 1000 repetitions per configuration 3)Output all results.
-
-You can post-process the results to recreate Figures 6 and 7 from the paper.
 
 ### :shield: :muscle: Robustness-efficiency trade-offs in classification
 All code for this experiment is located in the `label_noise` directory.
