@@ -25,7 +25,7 @@ Detailed instruction is provided for each one below.
 
 ## TabPFN inductive bias: 
 
-### Interpolation vs extrapolation
+### :signal_strength: Interpolation vs :rocket: extrapolation
 
 
 ### :chart_with_upwards_trend: :chart_with_downwards_trend: Comparison with LASSO regression
