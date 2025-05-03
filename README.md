@@ -26,9 +26,35 @@ Detailed instruction is provided for each one below.
 ## TabPFN inductive bias: 
 
 ### :signal_strength: Interpolation vs :rocket: extrapolation
+All code for this experiment is located in the `extrapolation` directory.
+First, navigate to the project directory:
+```
+cd extrpolation
+```
+The directory contains two Jupyter notebooks: 
+
+- `extrapolation_1D.ipynb`:Handles 1D interpolation and extrapolation experiments
+- `extrapolation_2D.ipynb`: Manages 2D interpolation and extrapolation experiments
 
 
 ### :chart_with_upwards_trend: :chart_with_downwards_trend: Comparison with LASSO regression
+
+All code for this experiment is located in the `LASSO` directory.
+First, navigate to the project directory:
+```
+cd LASSO
+```
+The directory contains two main scripts: `knn.py` and `comparison_LDA.py`.
+ - The `knn.py` contains the code for kNN (clean) and kNN (noisy).
+- The `comparison_LDA.py` contains the code for LDA and TabPFN.
+
+Execute either script with default parameters (all noise levels + 1000 repetitions): e.g.,
+```
+python knn.py
+```
+What the scripts do automatically: 1) Iterate through all configured noise levels 2)Run 1000 repetitions per configuration 3)Output all results.
+
+You can post-process the results to recreate Figures 6 and 7 from the paper.
 
 ### :shield: :muscle: :gear: Robustness-efficiency trade-offs in classification
 All code for this experiment is located in the `label_noise` directory.
@@ -44,7 +70,7 @@ Execute either script with default parameters (all noise levels + 1000 repetitio
 ```
 python knn.py
 ```
-What the Scripts Do Automatically: 1) Iterate through all configured noise levels 2)Run 1000 repetitions per configuration 3)Output all results.
+What the scripts do automatically: 1) Iterate through all configured noise levels 2)Run 1000 repetitions per configuration 3)Output all results.
 
 You can post-process the results to recreate Figures 6 and 7 from the paper.
 
