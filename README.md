@@ -1,5 +1,8 @@
-## 
+# TabPFN: One Model to Rule Them All?
 This is the official implementation for paper entitled "TabPFN: One Model to Rule Them All?".
+All implementations are done in Python.
+In the semi-supervised learning experiment, to compare with other baselines, we also use their R code.
+
 
 # Instructions
 Please make sure that you have the [TabPFN](https://github.com/PriorLabs/TabPFN) package installed.
@@ -33,8 +36,8 @@ cd extrpolation
 ```
 The directory contains two Jupyter notebooks: 
 
-- `extrapolation_1D.ipynb`:Handles 1D interpolation and extrapolation experiments
-- `extrapolation_2D.ipynb`: Manages 2D interpolation and extrapolation experiments
+- `extrapolation_1D.ipynb`: Handles 1D interpolation and extrapolation experiments. You can reproduce Figures 4 and 8 using this file.
+- `extrapolation_2D.ipynb`: Manages 2D interpolation and extrapolation experiments. You can reproduce Figures 9 using this file.
 
 
 ### :chart_with_upwards_trend: :chart_with_downwards_trend: Comparison with LASSO regression
@@ -44,9 +47,11 @@ First, navigate to the project directory:
 ```
 cd LASSO
 ```
-The directory contains two main scripts: `knn.py` and `comparison_LDA.py`.
- - The `knn.py` contains the code for kNN (clean) and kNN (noisy).
-- The `comparison_LDA.py` contains the code for LDA and TabPFN.
+The directory contains three files:
+- The `comparisons.py` contains the code for reproducing the results in Figure 5 and Table 2.
+
+- The `run-demo.sh` shows you an example how to run the experiment in bash script. The example in this base is when training set is of size $n=50$ and $100$ features with sparsity $s=1$ under random seed $1$.
+- The `ALE_plot.ipynb` provides the code to reproduce Figure 10 in the paper.
 
 Execute either script with default parameters (all noise levels + 1000 repetitions): e.g.,
 ```
@@ -56,7 +61,7 @@ What the scripts do automatically: 1) Iterate through all configured noise level
 
 You can post-process the results to recreate Figures 6 and 7 from the paper.
 
-### :shield: :muscle: :gear: Robustness-efficiency trade-offs in classification
+### :shield: :muscle: Robustness-efficiency trade-offs in classification
 All code for this experiment is located in the `label_noise` directory.
 First, navigate to the project directory:
 ```
