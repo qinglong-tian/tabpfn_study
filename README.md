@@ -23,7 +23,7 @@ Detailed instruction is provided for each one below.
 
 
 
-### CATE estimation
+### :bar_chart: CATE estimation
 All code for this experiment is located in the `CATE` directory.
 First, navigate to the project directory:
 ```
