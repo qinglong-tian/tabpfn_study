@@ -16,7 +16,7 @@ Detailed instruction is provided for each one below.
 
 ## Case studies 
 
-### :arrow_right: Parameter estimation under semisupervised learning setting
+### :arrow_right: Parameter estimation under the semi-supervised framework
 
 All code for this experiment is located in the `semisupervised` directory.
 The SLZ method and the simulation settings are only available in R, so we requires the **rpy2** library, which makes it possible to use R function in Python code.
