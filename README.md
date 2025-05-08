@@ -26,7 +26,12 @@ At the start of the IPython notebook, you will need to specify your R_HOME direc
 The three simulation settings: linear, logistic, and quantile regressions can be run in the three corresponding IPython notebooks.
 
 ### :arrow_right: Prediction under covariate shift
-
+```
+cd covariate_shift
+```
+You can re-run the simulation studies on covariate shift using the IPython file `covariate_shift_simu.ipynb`.
+The `KRR.py` file is originally from [https://github.com/kw2934/KRR](https://github.com/kw2934/KRR).
+We modify it to include our methods.
 
 
 ### :bar_chart: CATE estimation
