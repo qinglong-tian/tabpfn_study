@@ -22,7 +22,9 @@ All code for this experiment is located in the `semisupervised` directory.
 The SLZ method and the simulation settings are only available in R, so we requires the **rpy2** library, which makes it possible to use R function in Python code.
 At the start of the IPython notebook, you will need to specify your R_HOME directory, which can be found by typing ``R.home()`` in your R session.
 The three simulation settings: linear, logistic, and quantile regressions can be run in the three corresponding IPython notebooks.
-
+```
+cd semisupervised
+```
 ### :arrow_right: Prediction under covariate shift
 
 
