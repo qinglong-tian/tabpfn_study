@@ -126,7 +126,7 @@ Open and run all cells in `covariate_shift_application.ipynb`.
 - **Airfoil** (n = 1503, 5 covariates): downloaded automatically from the UCI repository.
 - **Concrete** (n = 1030, 8 covariates): bundled in `Concrete_Data.xls`.
 
-Each dataset uses a 70/30 train–test split with test resampling to induce covariate shift (two β settings per dataset, 10 repetitions each).
+Each dataset uses a 70/30 train–test split with seeded test resampling to induce covariate shift (both β settings per dataset, 10 repetitions each). The corrected real-data implementation weights the IW training loss and validation score, and evaluates every method with ordinary MSE on the same shifted test set. See [the real-data reproduction guide](section3_3_covariate_shift/README-real-data.md) for the updated Table 4, comparison figure, per-split results, and exact reproduction commands. This correction does not recompute the separate synthetic-study figures.
 
 Note: `lable_shift.ipynb` is supplementary exploratory analysis of label shift not reported in the main paper.
 

@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "completed_runs_checked": 40,
+  "prediction_mse_values_checked": 240,
+  "independent_iw_refits": 4,
+  "independent_weighted_cv_fold_fits": 20,
+  "regression_tests_run": 3,
+  "verified": [
+    "dataset hashes and shapes",
+    "source/test split membership",
+    "seeded target draws",
+    "saved predictions and ordinary target MSE",
+    "all means and standard errors",
+    "weighted CV parameter selections",
+    "independent selected-IW refits in all four settings",
+    "zero-shift IW and naive equivalence"
+  ],
+  "notebook_executed_without_errors": true,
+  "notebook_code_cells_executed": 4,
+  "pdf_exports_rendered_and_visually_checked": true
+}
