@@ -1,0 +1,4 @@
+# Preserve the byte-identical UCI input and its recorded SHA-256 (CRLF).
+data/airfoil_self_noise.dat -text whitespace=cr-at-eol
+# Matplotlib's generated SVG path coordinates have trailing spaces.
+results/real_data/*.svg -whitespace

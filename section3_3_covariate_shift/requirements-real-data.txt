@@ -1,0 +1,10 @@
+# Python 3.9.23; exact versions used for the corrected real-data rerun.
+numpy==2.0.2
+pandas==2.3.3
+scikit-learn==1.6.1
+xgboost==2.1.4
+tabpfn==2.2.1
+torch==2.8.0
+matplotlib==3.9.4
+xlrd==2.0.2
+nbformat==5.10.4

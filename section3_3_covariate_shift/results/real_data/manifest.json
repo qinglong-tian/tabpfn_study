@@ -1,0 +1,109 @@
+{
+  "protocol_hash": "25c1c03ef23b734341f8decce7037d668b4d9e32b3df44b0c5d0d273374179f3",
+  "protocol": {
+    "config": {
+      "repeats": 10,
+      "seed": 42,
+      "cv_folds": 5,
+      "test_size": 0.3,
+      "rho": 0.5,
+      "lambda_ratio": 2.0,
+      "tabpfn_estimators": 8,
+      "device": "cpu",
+      "threads": 4
+    },
+    "datasets": [
+      "airfoil",
+      "concrete"
+    ],
+    "shift_vectors": {
+      "airfoil": {
+        "beta1": [
+          -1,
+          1,
+          -1,
+          1,
+          -1
+        ],
+        "beta2": [
+          -1,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "concrete": {
+        "beta1": [
+          -1,
+          1,
+          -1,
+          1,
+          -1,
+          1,
+          -1,
+          1
+        ],
+        "beta2": [
+          -1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "xgb_grid": {
+      "n_estimators": [
+        200,
+        400
+      ],
+      "max_depth": [
+        3,
+        5
+      ],
+      "learning_rate": [
+        0.05,
+        0.1
+      ],
+      "subsample": [
+        0.8,
+        1.0
+      ],
+      "colsample_bytree": [
+        0.8,
+        1.0
+      ]
+    },
+    "model_sha256": "2ab5a07d5c41dfe6db9aa7ae106fc6de898326c2765be66505a07e2868c10736",
+    "data_sha256": {
+      "airfoil": "74c75fd71783f1e6b71f8a622b993dc592897a97cd689c5090a07147a1b097b3",
+      "concrete": "07143872dc27edbf949fd33c7c1f236907c6947c9527036adca90f155b962fbf"
+    },
+    "runner_sha256": "09c3c28726ba3e2f66e29e08dd17f855fc791be9814e55f179f4bd68bb01e4c9",
+    "preprocessing": "Raw features (no log transform); StandardScaler fit on source training only.",
+    "evaluation": "Ordinary MSE on the shared resampled target set; no evaluation weights.",
+    "iw_cv": "Pooled density-weighted out-of-fold squared error; fold training weights mean 1.",
+    "oracle": "KRR lambda selected with target test labels; optimistic, not a true-mean oracle.",
+    "versions": {
+      "numpy": "2.0.2",
+      "pandas": "2.3.3",
+      "scikit-learn": "1.6.1",
+      "xgboost": "2.1.4",
+      "tabpfn": "2.2.1",
+      "torch": "2.8.0",
+      "matplotlib": "3.9.4",
+      "xlrd": "2.0.2"
+    },
+    "python": "3.9.23",
+    "platform": "macOS-26.5.2-arm64-arm-64bit"
+  },
+  "started_utc": "2026-10-16T16:48:46.539075+00:00",
+  "base_commit": "9c78d50ba42411be0cecbda79437a46c9c885151",
+  "complete": true,
+  "completed_runs": 40,
+  "finished_utc": "2026-10-16T16:54:40.989108+00:00"
+}
