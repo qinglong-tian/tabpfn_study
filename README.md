@@ -14,7 +14,8 @@ pip install tabpfn
 ```
 The pretrained model weights are downloaded automatically on first use. For offline environments, follow the TabPFN offline-usage instructions and pass `model_path=` wherever `TabPFNClassifier()` or `TabPFNRegressor()` is called.
 
-Other key dependencies: `scikit-learn`, `numpy`, `pandas`, `econml`, `flaml`, `rpy2` (Study I only), `pycasso` (Section 4.1 only), `liac-arff` (Appendix D UQ real data only).
+Other key dependencies: `scikit-learn`, `numpy`, `pandas`, `matplotlib`, `joblib`, `econml`, `flaml`, `rpy2` (Study I only), `pycasso` (Section 4.1 only), `liac-arff` (real-data OpenML experiments).
+Several scripts use explicit local checkpoint paths for exact reproducibility; the corresponding sections below show the environment variables to set.
 
 ---
 
@@ -53,11 +54,24 @@ Each notebook iterates over feature dimensions `p ∈ {4, …, 9}`, labeled samp
 
 ```bash
 cd section3_1_semisupervised/real_data
-python reg_ssl_comparison.py          # linear regression on 5 OpenML datasets (Table 2)
-python clf_ssl_comparison_mean_imputation.py  # logistic regression on 5 OpenML datasets (Table 3)
+export TABPFN_REGRESSOR_CHECKPOINT=/path/to/tabpfn-v2-regressor.ckpt
+for dataset in kin8nm house_8L puma8NH BNG_stock bank8FM
+do
+    python reg_ssl_comparison.py --dataset "$dataset" --label-size 10
+done
+for dataset in BNG_breast-w kin8nm puma8NH mozilla4 wilt
+do
+    python clf_ssl_comparison_mean_imputation.py --dataset "$dataset" --label-size 20 --imputation mode
+    python clf_ssl_comparison_mean_imputation.py --dataset "$dataset" --label-size 20 --imputation mean
+done
 ```
 
-Datasets are fetched automatically from OpenML. `rpy2` is required for the SLZ baseline.
+The five regression datasets in Table 2 are `kin8nm`, `house_8L`, `puma8NH`, `BNG_stock`, and `bank8FM`.
+The script downloads these datasets from OpenML when necessary and verifies their MD5 checksums.
+The revised experiment uses `bank8FM` (OpenML ID 572; target `rej`) in place of `cmc`, whose target is categorical and therefore is not suitable for this regression experiment.
+`rpy2` is required for the SLZ baseline.
+The classification script implements both posterior-mode imputation and posterior-mean (fractional) imputation, corresponding to the two groups of TabPFN results in Table 3.
+Download the five classification datasets from OpenML in ARFF format (IDs 251, 807, 816, 1046, and 40983) and place them under `real_data/data/clf/binary/` before running the classification commands.
 
 ---
 
@@ -65,6 +79,8 @@ Datasets are fetched automatically from OpenML. `rpy2` is required for the SLZ b
 
 ```bash
 cd section3_2_CATE
+export TABPFN_REGRESSOR_MODEL_PATH=/path/to/tabpfn-v2-regressor.ckpt
+export TABPFN_CLASSIFIER_MODEL_PATH=/path/to/tabpfn-v2-classifier.ckpt
 ```
 
 ### Simulation (Figure 2; Tables 7–8 in appendix)
@@ -78,24 +94,34 @@ The main script is `CATE_comparison.py`. Key arguments:
 | `--seed` | Random seed | 1–100 |
 | `--tabpfn` | Use TabPFN as base learner (omit for AutoML) | flag |
 | `--d` | Feature dimension | `6` (default) |
-| `--var` | Noise variance σ² | `0.5`, `1`, `2` |
+| `--noise-variance` | Gaussian outcome-noise variance σ² (`--var` remains an alias) | `0.5`, `1`, `2` |
 
 Example (matches `run-demo.sh`):
 ```bash
-python CATE_comparison.py --setup A --seed 1 --ss 500 --tabpfn
+python CATE_comparison.py --setup A --seed 1 --ss 500 --d 6 --noise-variance 0.5 --tabpfn
 ```
 
+For every setup, the simulation draws `X` uniformly from `[-0.5, 0.5]^6`, draws treatment from `Bernoulli(e(X))`, and generates the observed outcome as `Y = b(X) + (T - 0.5) tau(X) + epsilon`, where `epsilon` is Gaussian with variance σ².
+All six covariates are supplied to every CATE learner, the test set contains 10,000 observations, and the six setups use the 100 repetition streams indexed by seeds 1–100 from the common reference seed 123.
+The S-learner is the standard S-learner: one outcome model is fitted using the treatment indicator and all six covariates, and its CATE estimate is the difference between predictions under `T=1` and `T=0`.
+Results are written to `section3_2_CATE/output/save_data/`, with separate `cate_automl_paper/` and `cate_tabpfn_paper/` subdirectories.
 The paper reports the median test MSE over 100 repetitions for each of the 6 setups × 3 sample sizes × 3 noise levels (Tables 7–8 in the appendix). The two representative setups A and E are shown in Figure 2.
 
-Helper files: `cate.py` defines all CATE estimators; `data_gen.py` generates synthetic datasets; `utils.py` contains utility functions.
+After all repetitions finish, reproduce and validate the CATE tables and figures with:
+
+```bash
+python summarize_manuscript_results.py
+```
+
+Helper files: `cate.py` defines all CATE estimators; `data_gen.py` generates synthetic datasets; `utils.py` contains utility functions; `summarize_manuscript_results.py` validates the complete result grid and generates the manuscript summaries.
 
 ### Real data — ACIC 2017 benchmark (Figure 3)
 
-**Data download**: The ACIC 2017 semi-synthetic datasets are based on the IHDP covariates and available from Richard Hahn's website: https://math.la.asu.edu/~prhahn/. Download the 6,000 datasets and place them in `section3_2_CATE/real_data/`.
+**Data download**: The ACIC 2017 semi-synthetic datasets are based on the IHDP covariates and available from Richard Hahn's website: https://math.la.asu.edu/~prhahn/. Download the 6,000 datasets and place them in `section3_2_CATE/real_data/contest_data/`.
 
 ```bash
 cd section3_2_CATE/real_data
-bash run.sh          # runs all setup × scenario × method combinations
+bash run.sh          # lightweight S-learner demo
 ```
 
 Or run individual configurations:
@@ -103,7 +129,12 @@ Or run individual configurations:
 python acic2017.py --setup iid --scenario 000 --method s
 ```
 
-Arguments: `--setup` ∈ {`iid`, `nonadditive`, `group_corr`}; `--scenario` ∈ {`000`, `001`, …, `111`}; `--method` ∈ {`s`, `t`, `x`, `dr`}.
+Arguments: `--setup` ∈ {`iid`, `nonadditive`, `group_corr`}; `--scenario` ∈ {`000`, `001`, …, `111`}; `--method` ∈ {`s`, `t`, `x`, `dr`, `sbcf`, `xbcf`}.
+
+The files in `real_data/` are a compact demonstration rather than the complete production pipeline used to generate the manuscript figures.
+The supplied `run.sh` runs the S-learner over all 24 scenarios, while `acic2017.py` also exposes the T-, X-, DR-, S+PS-, and X+PS-learners for individual runs.
+To obtain the complete manuscript results, first download the 6,000 ACIC datasets and the published benchmark outputs from the source above, run the desired methods over all three setups and eight scenarios, and aggregate the 250 replicate-level CATE RMSE values per scenario.
+The archived TabPFN outputs underlying the paper, including the T+PS results not generated by this demo, can be requested by opening an issue in this repository or contacting the corresponding author.
 
 ---
 
@@ -138,7 +169,7 @@ Note: `lable_shift.ipynb` is supplementary exploratory analysis of label shift n
 cd section4_1_adaptivity_regression
 ```
 
-### Prediction performance comparison (Figure 5; Table 5)
+### Prediction performance comparison demo (Figure 5; Table 5)
 
 ```bash
 python comparisons.py --n 50 --d 100 --s 1 --seed 1
@@ -151,7 +182,10 @@ python comparisons.py --n 50 --d 100 --s 1 --seed 1
 | `--s` | Sparsity (number of non-zero coefficients) | `1`, `5`, `10`, `20`, `30` |
 | `--seed` | Random seed | 1–100 |
 
-The paper averages results over 100 seeds for each of 5 (sparsity) × 3 (design/beta type) × 4 (SNR) × 2 (sample size) = 120 configurations. See `run-demo.sh` for a minimal example.
+The files in this directory are lightweight demonstrations rather than the complete production pipeline used to generate Figure 5 and Table 5.
+`comparisons.py` illustrates the coefficient postprocessing step for beta-type I under the identity design at SNR values 1.22 and 6, and expects the corresponding prediction archive under `output/save_data_revision/`; `run-demo.sh` shows one invocation.
+The paper averages results over 100 seeds for each of 5 sparsity levels × 3 design/coefficient settings × 4 SNR levels × 2 sample sizes.
+To obtain the full results, request the archived `output/save_data_revision/` directory and the complete production driver by opening an issue in this repository or contacting the corresponding author, then place the archive under `section4_1_adaptivity_regression/output/`.
 
 ### ALE plots for descriptive accuracy (Figure 21 in appendix)
 
@@ -173,6 +207,7 @@ python comparison_LDA.py   # LDA (clean/noisy) and TabPFN (clean/noisy)
 ```
 
 Combine the outputs of both scripts to reproduce Figures 6 and 7. Data are generated from models M1 (Gaussian class-conditional) and M2 (nonlinear Bayes boundary), with training sizes `n` up to 10,000.
+Both standard comparison methods are implemented in this repository using scikit-learn: `comparison_LDA.py` fits LDA to the clean and noisy labels, and `knn.py` tunes kNN over the ten-value grid reported in the manuscript using five-fold cross-validation.
 
 ---
 
@@ -187,7 +222,9 @@ cd appendixD_GP_comparison
 - `extrapolation_1D.ipynb` — 1D experiments comparing TabPFN and GPR on linear, quadratic, step, and piecewise-linear functions; reproduces Figures 16–17.
 - `extrapolation_2D.ipynb` — 2D experiments on the same function classes; reproduces Figure 18.
 
-Training data are drawn from `[−1, 1]` (or `[−1, 1]²` in 2D); predictions are evaluated over `[−4, 4]` to assess both interpolation and extrapolation.
+The 1D training inputs are equally spaced on `[−1, 1]`, and predictions are evaluated on `[−4.5, 4.5]`.
+The 2D training inputs form an equally spaced grid on `[0, 1]²`, and predictions are evaluated on `[−0.5, 1.5]²`.
+In both notebooks, the GPR kernel and measurement-error standard deviation are selected by marginal log-likelihood, and predictions are generated from the selected `best_gpr` model.
 
 ### D.4 Uncertainty quantification — synthetic data (Tables 9–10 in appendix)
 
@@ -202,13 +239,13 @@ python UQ.py --n 11 --seed 1 --f linear
 | `--seed` | Random seed | 1–100 |
 | `--f` | True function | `linear`, `quadratic`, `step`, `piecewiselinear` |
 
-This computes coverage of the 95% prediction interval for f (the true function) across the interpolation and extrapolation regions, comparing TabPFN and GPR. Results are saved as pickle files in `output_coverage/raw_data/`. The full experiment is 4 functions × 2 sizes × 100 seeds = 800 runs; use `submit.sh` for batch execution on a cluster.
+This computes coverage of the 95% prediction interval for an independently generated noisy response across the interpolation and extrapolation regions, comparing TabPFN and GPR. Results are saved as pickle files in `output_coverage/raw_data/`. The full experiment is 4 functions × 2 sizes × 100 seeds = 800 runs; on a cluster, distribute the command above over seeds 1–100 and loop over the four functions and two sample sizes within each job.
 
 Aggregate and visualize results (Tables 9–10) in `summary.ipynb`.
 
 ### D.4 Uncertainty quantification — real data (new experiment)
 
-**Data download**: Download the following 5 datasets in ARFF format from [OpenML](https://www.openml.org/) and place them in `appendixD_GP_comparison/UQ/data/reg/`:
+**Data download**: The experiment script downloads the following OpenML ARFF files when they are absent and verifies every file against OpenML's MD5 checksum. Files are stored in `appendixD_GP_comparison/UQ/data/reg/`:
 
 | Dataset name | OpenML ID | Target column |
 |---|---|---|
@@ -216,10 +253,13 @@ Aggregate and visualize results (Tables 9–10) in `summary.ipynb`.
 | house_8L | 218 | `price` |
 | puma8NH | 225 | `thetadd3` |
 | BNG (stock) | 1200 | `company10` |
-| cmc | 45052 | `class` |
+| bank8FM | 572 | `rej` |
+
+This experiment likewise uses `bank8FM` in place of `cmc`, so that all five real-data tasks have continuous regression targets.
 
 ```bash
 cd appendixD_GP_comparison/UQ
+export TABPFN_REGRESSOR_CHECKPOINT=/path/to/tabpfn-v2-regressor.ckpt
 python real_data_calibration.py --dataset kin8nm --seed 1
 ```
 

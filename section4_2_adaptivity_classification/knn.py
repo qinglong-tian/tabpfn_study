@@ -15,7 +15,7 @@ def generate_data(pi, n=1000, model_no=1, seed=1):
     if model_no == 1:
         d = 5
         X = rng.normal(size=(n, d))
-        mu = np.array([[3 / 2, 0, 0, 0, 0], [-3 / 2, 0, 0, 0, 0]])
+        mu = np.array([[-3 / 2, 0, 0, 0, 0], [3 / 2, 0, 0, 0, 0]])
         Y = rng.choice(2, size=n, p=[1 - pi, pi])
         X[Y == 0] = X[Y == 0] + mu[0]
         X[Y == 1] = X[Y == 1] + mu[1]
@@ -29,7 +29,7 @@ def generate_data(pi, n=1000, model_no=1, seed=1):
 
 def oracle_classifier(X, model_no=1, pi=0.5):
     if model_no == 1:
-        eta = 1 / (1 + ((1 - pi) / pi) * np.exp(3 * X[:, 0]))
+        eta = 1 / (1 + ((1 - pi) / pi) * np.exp(-3 * X[:, 0]))
     elif model_no == 2:
         eta = np.minimum(4 * (X[:, 0] - 0.5)**2 + 4 * (X[:, 1] - 0.5)**2, 1)
     pred = (eta >= 0.5)
@@ -75,8 +75,8 @@ def main(model_option, noise, save_folder, pi=0.5):
             param_grid = {
                 'n_neighbors':
                 np.floor(np.linspace(n**(1 / 4), n**(3 / 4),
-                                     10)).astype(int)[:2]
-            }  # Testing k values from 1 to 30
+                                     10)).astype(int)
+            }
             # Create KNN classifier
             knn = KNeighborsClassifier()
             # Use GridSearchCV with 5-fold cross-validation
@@ -91,13 +91,13 @@ def main(model_option, noise, save_folder, pi=0.5):
             clean[j, i] = np.mean(y_test == ypred)
 
             # noisy label
-            noisy_y = generate_noisy_label(y_train, noise, j)
+            noisy_y = generate_noisy_label(y_train, noise, j + 1_000_000)
             # Define the parameter values to test
             param_grid = {
                 'n_neighbors':
                 np.floor(np.linspace(n**(1 / 4), n**(3 / 4),
-                                     10)).astype(int)[:3]
-            }  # Testing k values from 1 to 30
+                                     10)).astype(int)
+            }
             # Create KNN classifier
             knn = KNeighborsClassifier()
             # Use GridSearchCV with 5-fold cross-validation

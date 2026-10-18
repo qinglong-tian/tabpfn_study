@@ -137,10 +137,7 @@ def combine_xy(X1, Y1, X2=None, Y2=None):
     return pd.concat([y, X], axis=1)
 
 
-def setup_r_env(R_HOME, R_SCRIPT1, R_SCRIPT2, tau_0, option):
-    os.environ["R_HOME"] = R_HOME
-    os.environ["R_USER"] = os.environ["R_HOME"]
-
+def setup_r_env(R_SCRIPT1, R_SCRIPT2, tau_0, option):
     wd = pathlib.Path.cwd().as_posix()
     ro.r(f'setwd("{wd}")')
 
@@ -223,7 +220,7 @@ def run_r_estimations(ro, df_labeled, df_imputed, df_train_imputed,
     }
 
 
-def comparison(dataset, label_size=20):
+def comparison(dataset, label_size=20, imputation="mean"):
     file_path = os.path.join('data/clf/binary/', dataset + '.arff')
     df = load_arff_file(file_path)
     X, X_encoded, y = preprocess_dataset(df, clf_dataset_dic[file_path])
@@ -233,7 +230,7 @@ def comparison(dataset, label_size=20):
     results = {}
 
     # Set up R once
-    ro = setup_r_env(R_HOME, R_SCRIPT1, R_SCRIPT2, 0.5,
+    ro = setup_r_env(R_SCRIPT1, R_SCRIPT2, 0.5,
                      "ii")  # Logistic regression
 
     # Oracle estimator
@@ -270,11 +267,9 @@ def comparison(dataset, label_size=20):
         #-------------------------------------------
         # TabPFN imputation
         #-------------------------------------------
-        classifier = TabPFNClassifier(model_path="./tabpfn-v2-classifier.ckpt")
-        classifier.fit(X.iloc[labeled_idx], y.iloc[labeled_idx])
-        # preds_train_probs = classifier.predict_proba(X.iloc[labeled_idx])[:,1]
-        # preds_train = np.squeeze(np.random.binomial(1, preds_train_probs))
-        preds_train_probs = classifier.predict_proba(X.iloc[labeled_idx])
+        classifier = TabPFNClassifier()
+        classifier.fit(X_train, y_train)
+        preds_train_probs = classifier.predict_proba(X_train)
 
         # Batch prediction
         batch_size = 800
@@ -283,7 +278,7 @@ def comparison(dataset, label_size=20):
 
         for i in range(0, len(unlabeled_idx), batch_size):
             batch_indices = unlabeled_idx[i:i + batch_size]
-            batch_X = X.iloc[batch_indices]
+            batch_X = X_encoded.iloc[batch_indices]
 
             # Predict current batch
             batch_pred_probs = classifier.predict_proba(batch_X)
@@ -297,44 +292,60 @@ def comparison(dataset, label_size=20):
         # Combine all prediction results
         preds_test_probs = np.vstack(all_predictions)
 
-        # Build datasets for different estimators
-        df_labeled = combine_xy(X_train, y_train)  # train only        
-        # Create duplicated test data as DataFrames, not numpy arrays
-        X_test_duplicated = pd.concat([X_test, X_test], ignore_index=True)
-        y_test_duplicated = pd.Series(
-            np.concatenate([np.zeros(X_test.shape[0]), np.ones(X_test.shape[0])]),
-            name="target"
-        )
-        
-        X_train_duplicated = pd.concat([X_train, X_train], ignore_index=True)
-        y_train_duplicated = pd.Series(
-            np.concatenate([np.zeros(X_train.shape[0]), np.ones(X_train.shape[0])]),
-            name="target"
-        )
-        
-        X_all_duplicated = pd.concat([X_train, X_train, X_test, X_test], ignore_index=True)
-        y_all_duplicated = pd.Series(
-            np.concatenate([
-                np.zeros(X_train.shape[0]), np.ones(X_train.shape[0]),
-                np.zeros(X_test.shape[0]), np.ones(X_test.shape[0])
-            ]),
-            name="target"
-        )
-        
-        # Now use these DataFrames in combine_xy
-        df_imputed = combine_xy(X_train, y_train, X_test_duplicated, y_test_duplicated)
-        df_train_imputed = combine_xy(X_train_duplicated, y_train_duplicated)
-        df_all_imputed = combine_xy(X_all_duplicated, y_all_duplicated)
-        
-        imputed_weight = np.concatenate([
-            np.ones(X_train.shape[0]), preds_test_probs[:, 0], preds_test_probs[:, 1]
-        ])
-        train_imputed_weight = np.concatenate(
-            [preds_train_probs[:, 0], preds_train_probs[:, 1]])
-        all_imputed_weight = np.concatenate([
-            preds_train_probs[:, 0], preds_train_probs[:, 1],
-            preds_test_probs[:, 0], preds_test_probs[:, 1]
-        ])
+        # Build datasets for mode or posterior-mean (fractional) imputation.
+        df_labeled = combine_xy(X_train, y_train)
+        if imputation == "mode":
+            preds_train = np.argmax(preds_train_probs, axis=1)
+            preds_test = np.argmax(preds_test_probs, axis=1)
+            df_imputed = combine_xy(X_train, y_train, X_test, preds_test)
+            df_train_imputed = combine_xy(X_train, preds_train)
+            df_all_imputed = combine_xy(X_train, preds_train, X_test,
+                                        preds_test)
+            imputed_weight = np.ones(len(df_imputed))
+            train_imputed_weight = np.ones(len(df_train_imputed))
+            all_imputed_weight = np.ones(len(df_all_imputed))
+        else:
+            X_test_duplicated = pd.concat([X_test, X_test],
+                                          ignore_index=True)
+            y_test_duplicated = pd.Series(
+                np.concatenate([
+                    np.zeros(X_test.shape[0]),
+                    np.ones(X_test.shape[0])
+                ]),
+                name="target")
+            X_train_duplicated = pd.concat([X_train, X_train],
+                                           ignore_index=True)
+            y_train_duplicated = pd.Series(
+                np.concatenate([
+                    np.zeros(X_train.shape[0]),
+                    np.ones(X_train.shape[0])
+                ]),
+                name="target")
+            X_all_duplicated = pd.concat(
+                [X_train, X_train, X_test, X_test], ignore_index=True)
+            y_all_duplicated = pd.Series(
+                np.concatenate([
+                    np.zeros(X_train.shape[0]),
+                    np.ones(X_train.shape[0]),
+                    np.zeros(X_test.shape[0]),
+                    np.ones(X_test.shape[0])
+                ]),
+                name="target")
+            df_imputed = combine_xy(X_train, y_train, X_test_duplicated,
+                                    y_test_duplicated)
+            df_train_imputed = combine_xy(X_train_duplicated,
+                                          y_train_duplicated)
+            df_all_imputed = combine_xy(X_all_duplicated, y_all_duplicated)
+            imputed_weight = np.concatenate([
+                np.ones(X_train.shape[0]), preds_test_probs[:, 0],
+                preds_test_probs[:, 1]
+            ])
+            train_imputed_weight = np.concatenate(
+                [preds_train_probs[:, 0], preds_train_probs[:, 1]])
+            all_imputed_weight = np.concatenate([
+                preds_train_probs[:, 0], preds_train_probs[:, 1],
+                preds_test_probs[:, 0], preds_test_probs[:, 1]
+            ])
 
         # Run R estimations
         try:
@@ -360,7 +371,8 @@ def comparison(dataset, label_size=20):
             results["TabPFND_" + str(seed)] = (thetas["debiased"] -
                                                results["truth"])**2
             results["SLZ_" + str(seed)] = (thetas["SLZ"] - results["truth"])**2
-        except:
+        except Exception as error:
+            print(f"Skipping seed {seed} after estimation error: {error}")
             continue
         # print(np.mean((thetas["supervised"] - results["truth"])**2), np.mean((thetas["imputed"] - results["truth"])**2), np.mean((thetas["debiased"] - results["truth"])**2), np.mean((thetas["SLZ"] - results["truth"])**2))
 
@@ -369,7 +381,7 @@ def comparison(dataset, label_size=20):
     #         print(key, np.mean((val - results["truth"])**2))
 
     # Save results
-    save_path = os.path.join('clf', 'n_' + str(label_size))
+    save_path = os.path.join('clf', imputation, 'n_' + str(label_size))
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     with open(os.path.join(save_path, dataset + '.pickle'), "wb") as f:
@@ -377,22 +389,22 @@ def comparison(dataset, label_size=20):
 
 
 if __name__ == "__main__":
-    # Configuration
-    # Open R console and type "R.home()", copy the output in the next line
-    # R_HOME = r"/Library/Frameworks/R.framework/Resources"
-    R_HOME = r"/root/miniconda3/envs/FedDRM/lib/R"
-    # Make sure these two files are in the same folder
+    # Set R_HOME in the shell before starting Python.
     R_SCRIPT1 = "./semi_supervised_methods.R"
     R_SCRIPT2 = "./SupervisedEstimation.R"
 
-    parser = argparse.ArgumentParser(description="CATE estimation")
-    parser.add_argument("--dataset", type=str)
+    parser = argparse.ArgumentParser(
+        description="Semi-supervised logistic-regression estimation")
+    parser.add_argument("--dataset", type=str, required=True)
+    parser.add_argument("--label-size", type=int, default=20)
+    parser.add_argument("--imputation",
+                        choices=["mode", "mean"],
+                        default="mean")
     args = parser.parse_args()
 
     # comparison('customer_satisfaction_in_airline')
     # comparison('GiveMeSomeCredit')
-    dataset = args.dataset
-    comparison(dataset)
+    comparison(args.dataset, args.label_size, args.imputation)
     # after removing NAs, less than 5000 obs or # of feature > 500
     # comparison('Amazon_employee_access')
     # comparison('APSFailure')

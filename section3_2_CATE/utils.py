@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from flaml import AutoML
 from tabpfn import TabPFNClassifier, TabPFNRegressor
@@ -5,6 +6,12 @@ from sklearn.base import BaseEstimator, clone
 import warnings
 
 warnings.simplefilter('ignore')
+
+TABPFN_CLASSIFIER_MODEL_PATH = os.environ.get(
+    "TABPFN_CLASSIFIER_MODEL_PATH", "./tabpfn-v2-classifier.ckpt")
+TABPFN_REGRESSOR_MODEL_PATH = os.environ.get(
+    "TABPFN_REGRESSOR_MODEL_PATH", "./tabpfn-v2-regressor.ckpt")
+TABPFN_DEVICE = os.environ.get("TABPFN_DEVICE", "auto")
 
 
 ####################################
@@ -17,7 +24,9 @@ def rmse(ytrue, y):
 class tabpfnT(BaseEstimator):
 
     def __init__(self):
-        self.classifier = TabPFNClassifier()
+        self.classifier = TabPFNClassifier(
+            model_path=TABPFN_CLASSIFIER_MODEL_PATH,
+            device=TABPFN_DEVICE)
 
     def fit(self, X, T, **kwargs):
         self.classifier.fit(X, T)
@@ -30,7 +39,9 @@ class tabpfnT(BaseEstimator):
 class tabpfnY(BaseEstimator):
 
     def __init__(self):
-        self.regressor = TabPFNRegressor()
+        self.regressor = TabPFNRegressor(
+            model_path=TABPFN_REGRESSOR_MODEL_PATH,
+            device=TABPFN_DEVICE)
 
     def fit(self, X, y, **kwargs):
         self.regressor.fit(X, y)
@@ -43,7 +54,9 @@ class tabpfnY(BaseEstimator):
 class tabpfnfinal(BaseEstimator):
 
     def __init__(self):
-        self.regressor = TabPFNRegressor()
+        self.regressor = TabPFNRegressor(
+            model_path=TABPFN_REGRESSOR_MODEL_PATH,
+            device=TABPFN_DEVICE)
 
     def fit(self, X, y, **kwargs):
         self.regressor = self.regressor.fit(X, y)
@@ -113,7 +126,7 @@ def first_stage_reg(X, y):
                     time_budget=60,
                     early_stop=True,
                     eval_method='cv',
-                    n_splits=2,
+                    n_splits=5,
                     metric='mse',
                     verbose=0)
     automl.fit(X, y)
@@ -127,8 +140,8 @@ def first_stage_clf(X, y):
                     time_budget=60,
                     early_stop=True,
                     eval_method='cv',
-                    n_splits=2,
-                    metric='accuracy',
+                    n_splits=5,
+                    metric='mse',
                     verbose=0)
     automl.fit(X, y)
     best_est = automl.best_estimator
@@ -165,6 +178,6 @@ def final_stage():
                                       time_budget=60,
                                       early_stop=True,
                                       eval_method='cv',
-                                      n_splits=2,
+                                      n_splits=10,
                                       metric=weighted_mse,
                                       verbose=0))

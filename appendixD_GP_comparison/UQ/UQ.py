@@ -49,7 +49,7 @@ def compute_coverage(seed, n, f, fname, save_folder):
     y_train = f(X_train) + epsilon
 
     # TabPFN
-    regressor = TabPFNRegressor(model_path="./tabpfn-v2-regressor.ckpt")
+    regressor = TabPFNRegressor()
     regressor.fit(X_train.reshape((-1, 1)), y_train)
     X_test = np.arange(-4.5, 4.6, 0.1)
     y_pred = regressor.predict(X_test.reshape((-1, 1)),
@@ -81,7 +81,8 @@ def compute_coverage(seed, n, f, fname, save_folder):
         for alpha in alpha_candidates:
             gpr = GaussianProcessRegressor(kernel=kernel,
                                            alpha=alpha**2,
-                                           n_restarts_optimizer=10)
+                                           n_restarts_optimizer=10,
+                                           random_state=seed)
             gpr.fit(X_train.reshape((-1, 1)), y_train)
             score = gpr.log_marginal_likelihood()
             # print(alpha, score)
@@ -91,7 +92,8 @@ def compute_coverage(seed, n, f, fname, save_folder):
                 best_gpr = gpr
                 best_alpha = alpha
 
-    y_pred_gp, y_cov_gp = gpr.predict(X_test.reshape((-1, 1)), return_cov=True)
+    y_pred_gp, y_cov_gp = best_gpr.predict(X_test.reshape((-1, 1)),
+                                           return_cov=True)
     upper = y_pred_gp + 1.96 * np.sqrt(np.diag(y_cov_gp) + best_alpha**2)
     lower = y_pred_gp - 1.96 * np.sqrt(np.diag(y_cov_gp) + best_alpha**2)
     coverage = (lower <= y_true) & (y_true <= upper)
